@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeno AI - Smart Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Minimalist White Theme */
+        :root {
+            --bg-color: #f7f7f8;
+            --chat-bg: #ffffff;
+            --text-main: #111111;
+            --text-muted: #666666;
+            --border-color: #e5e5e5;
+            --user-msg-bg: #111111;
+            --user-msg-text: #ffffff;
+            --zeno-msg-bg: #f7f7f8;
+            --accent: #000000;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 900px;
+            height: 95vh;
+            background-color: var(--chat-bg);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        .header {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 24px; font-weight: 700; }
+        .header p { font-size: 14px; color: var(--text-muted); }
+
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #10a37f;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .chat-window {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            line-height: 1.6;
+            animation: fadeIn 0.3s ease-in-out;
+            word-wrap: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background-color: var(--user-msg-bg);
+            color: var(--user-msg-text);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.zeno {
+            align-self: flex-start;
+            background-color: var(--zeno-msg-bg);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing-indicator {
+            font-style: italic;
+            color: var(--text-muted);
+            font-size: 14px;
+            display: none;
+            align-self: flex-start;
+            padding-left: 10px;
+        }
+
+        .input-area {
+            padding: 20px 30px;
+            background-color: var(--chat-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 18px 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 30px;
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s;
+        }
+
+        input[type="text"]:focus { border-color: var(--accent); }
+
+        .btn {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            height: 50px;
+            width: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 18px;
+            transition: transform 0.2s;
+        }
+
+        .btn-mic {
+            background-color: #fff;
+            color: var(--accent);
+            border: 1px solid var(--border-color);
+        }
+
+        .listening {
+            animation: pulse 1.5s infinite;
+            background-color: #ff4a4a !important;
+            color: white !important;
+            border: none;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 74, 74, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 74, 74, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 74, 74, 0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <div>
+                <h1>Zeno AI</h1>
+                <p>Neural Network Online. General Knowledge Active.</p>
+            </div>
+            <div>
+                <span class="status-dot"></span> Online
+            </div>
+        </div>
+
+        <div class="chat-window" id="chat-window">
+            <div class="message zeno">
+                Hello. I am Zeno. I am connected to a global neural network and possess vast general knowledge. Ask me anything, or tell me to "Search Google for [topic]".
+            </div>
+            <div class="typing-indicator" id="typing-indicator">Zeno is thinking...</div>
+        </div>
+
+        <div class="input-area">
+            <button class="btn btn-mic" id="mic-btn" title="Speak to Zeno">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+            <div class="input-wrapper">
+                <input type="text" id="user-input" placeholder="Ask a question or give a command..." autocomplete="off">
+            </div>
+            <button class="btn" id="send-btn" title="Send Message">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const chatWindow = document.getElementById('chat-window');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+
+        // Voice System Setup
+        const synth = window.speechSynthesis;
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                micBtn.classList.add('listening');
+                userInput.placeholder = "Listening...";
+                synth.cancel(); // Stop Zeno from talking over you
+            };
+
+            recognition.onresult = (event) => {
+                userInput.value = event.results[0][0].transcript;
+                handleUserMessage();
+            };
+
+            recognition.onend = () => {
+                micBtn.classList.remove('listening');
+                userInput.placeholder = "Ask a question or give a command...";
+            };
+        }
+
+        sendBtn.addEventListener('click', handleUserMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleUserMessage();
+        });
+
+        micBtn.addEventListener('click', () => {
+            if (recognition) recognition.start();
+        });
+
+        async function handleUserMessage() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // Add user message to UI
+            appendMessage('user', text);
+            userInput.value = '';
+
+            // Show "Zeno is thinking..."
+            typingIndicator.style.display = 'block';
+            chatWindow.appendChild(typingIndicator);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            // Generate Response
+            const response = await generateZenoResponse(text);
+
+            // Hide typing indicator and show response
+            typingIndicator.style.display = 'none';
+            appendMessage('zeno', response);
+            speakText(response);
+        }
+
+        function appendMessage(sender, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender);
+            
+            // Basic formatting for AI text (removes markdown asterisks for cleaner UI)
+            msgDiv.innerText = text.replace(/\*\*/g, '');
+            
+            chatWindow.insertBefore(msgDiv, typingIndicator);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // ZENO'S BRAIN (Connected to AI & Google)
+        async function generateZenoResponse(text) {
+            const lowerText = text.toLowerCase();
+
+            // 1. FOUNDER COMMAND
+            if (lowerText.includes("who is the founder") || lowerText.includes("who created you")) {
+                return "My founder is a brilliant visionary who created me to handle any task and connected me to the global neural network.";
+            }
+
+            // 2. GOOGLE SEARCH COMMAND
+            if (lowerText.includes("search google for")) {
+                let query = lowerText.replace("search google for", "").trim();
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, "_blank");
+                return `I have opened a Google Search for "${query}" in a new tab for you.`;
+            }
+
+            // 3. DATE & TIME
+            if (lowerText === "what time is it" || lowerText === "what is the date") {
+                return `It is currently ${new Date().toLocaleString()}.`;
+            }
+
+            // 4. GENERAL KNOWLEDGE (Connected to Real AI Model)
+            try {
+                // We use a free text API (Pollinations AI) to give Zeno an actual LLM Brain.
+                // We inject a system prompt so it knows its name is Zeno.
+                const systemPrompt = "You are Zeno, an advanced and highly intelligent AI assistant. Answer concisely in 2 to 3 sentences. The user says: ";
+                const promptUrl = `https://text.pollinations.ai/${encodeURIComponent(systemPrompt + text)}`;
+                
+                const response = await fetch(promptUrl);
+                
+                if (!response.ok) throw new Error("API Offline");
+                
+                const aiAnswer = await response.text();
+                return aiAnswer;
+                
+            } catch (error) {
+                console.error("AI Fetch Error:", error);
+                return "My neural connection to the global AI is currently unstable. However, you can still ask me to 'Search Google for' any topic.";
+            }
+        }
+
+        // Zeno's Voice Output
+        function speakText(text) {
+            if (synth.speaking) synth.cancel();
+            
+            // Clean text so the voice doesn't read markdown symbols out loud
+            let cleanText = text.replace(/[*#_]/g, '');
+
+            const utterThis = new SpeechSynthesisUtterance(cleanText);
+            const voices = synth.getVoices();
+            
+            // Pick a professional voice
+            const preferredVoice = voices.find(v => v.name.includes('Google UK') || v.name.includes('Daniel') || v.name.includes('Samantha'));
+            if (preferredVoice) utterThis.voice = preferredVoice;
+            
+            utterThis.rate = 1.0;
+            utterThis.pitch = 1.0;
+            synth.speak(utterThis);
+        }
+
+        // Load voices
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = synth.getVoices;
+        }
+    </script>
+</body>
+</html>
